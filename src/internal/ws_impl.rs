@@ -1,7 +1,10 @@
 use std::io::Read;
 
 use async_trait::async_trait;
-use async_tungstenite::tungstenite::Message;
+use async_tungstenite::tungstenite::{
+    handshake::client::{generate_key, Request},
+    Message,
+};
 use flate2::read::ZlibDecoder;
 use futures::{SinkExt, StreamExt};
 use tokio::time::timeout;
@@ -85,8 +88,30 @@ pub(crate) async fn create_client(url: Url) -> Result<WsStream> {
         max_send_queue: None,
         accept_unmasked_frames: false,
     };
+    let req = Request::get(url.as_str())
+        .header("Host", "gateway.discord.gg")
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+        )
+        .header("Accept", "*/*")
+        .header("Accept-Language", "en-US,en;q=0.5")
+        .header("Accept-Encoding", "gzip, deflate, br")
+        .header("Sec-WebSocket-Version", "13")
+        .header("Origin", "https://discord.com")
+        .header("Sec-WebSocket-Extensions", "permessage-deflate")
+        .header("Sec-WebSocket-Key", generate_key())
+        .header("Connection", "keep-alive, Upgrade")
+        .header("Sec-Fetch-Dest", "websocket")
+        .header("Sec-Fetch-Mode", "websocket")
+        .header("Sec-Fetch-Site", "cross-site")
+        .header("Pragma", "no-cache")
+        .header("Cache-Control", "no-cache")
+        .header("Upgrade", "websocket")
+        .body(())
+        .unwrap();
     let (stream, _) =
-        async_tungstenite::tokio::connect_async_with_config(url, Some(config)).await?;
+        async_tungstenite::tokio::connect_async_with_config(req, Some(config)).await?;
 
     Ok(stream)
 }
