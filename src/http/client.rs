@@ -171,14 +171,9 @@ impl HttpBuilder {
     }
 }
 
+#[inline]
 fn parse_token(token: impl AsRef<str>) -> String {
-    let token = token.as_ref().trim();
-
-    if token.starts_with("Bot ") || token.starts_with("Bearer ") {
-        token.to_string()
-    } else {
-        format!("Bot {}", token)
-    }
+    token.as_ref().trim().to_owned()
 }
 
 fn reason_into_header(reason: &str) -> Headers {
